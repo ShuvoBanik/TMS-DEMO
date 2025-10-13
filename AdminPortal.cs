@@ -28,46 +28,50 @@ namespace RSS.Properties
             login.Show();
         }
 
-        private void reloadData()
+        private void ReloadData()
         {
-            SqlConnection con = new SqlConnection("Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True");
-            con.Open();
-            string query = "select * from [Admin portal]";
-            SqlCommand cmd = new SqlCommand(query, con);
-            SqlDataAdapter adp = new SqlDataAdapter(cmd);
-            DataSet ds = new DataSet();
-            adp.Fill(ds);
-            DataTable dt = ds.Tables[0];
-            dataGridView1.AutoGenerateColumns = false;
-            dataGridView1.DataSource = dt;
-            con.Close();
+            try
+            {
+                string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Security=True;TrustServerCertificate=True";
+
+                using (SqlConnection con = new SqlConnection(connectionString))
+                {
+                    con.Open();
+                    string query = "SELECT * FROM Admin_Portal";
+                    SqlCommand cmd = new SqlCommand(query, con);
+                    SqlDataAdapter adp = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    adp.Fill(dt);
+
+                    GridViewAdmin2.AutoGenerateColumns = true;
+                    GridViewAdmin2.DataSource = dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error reloading data: " + ex.Message);
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            reloadData();
+            ReloadData();
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
-            SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-            string query = "INSERT INTO [Admin portal] ([Agent Name], Branch, Password, [Number of Customer]) " +
-               "VALUES (@AgentName, @Branch, @Password, @CustomerCount)";
-
-            SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@AgentName", txtaname.Text);
-            cmd.Parameters.AddWithValue("@Branch", txtbranch.Text);
-            cmd.Parameters.AddWithValue("@Password", txtpass.Text);
-            cmd.Parameters.AddWithValue("@CustomerCount", int.Parse(txtcus.Text));
-            cmd.ExecuteNonQuery();
-            MessageBox.Show("Insert done");
+            
         }
 
         private void AdminPortal_Load(object sender, EventArgs e)
         {
-            reloadData();
+            this.customer_OwnerTableAdapter.Fill(this.rSS_TMSDataSet6.Customer_Owner);
+            this.admin2TableAdapter2.Fill(this.rSS_TMSDataSet5.Admin2);
+            this.admin2TableAdapter1.Fill(this.rSS_TMSDataSet4.Admin2);
+            
+            this.admin2TableAdapter.Fill(this.rSS_TMSDataSet3.Admin2);
+            ReloadData();
+            txtaid.ReadOnly = true;
         }
 
         private void button8_Click(object sender, EventArgs e)
@@ -80,49 +84,10 @@ namespace RSS.Properties
 
         }
 
-        private void button5_Click(object sender, EventArgs e)
+        /*private void button5_Click(object sender, EventArgs e)
         {
-            // Update button
-            try
-            {
-                if (string.IsNullOrWhiteSpace(txtaid.Text))
-                {
-                    MessageBox.Show("Please enter Agent ID to update.", "Input Required");
-                    return;
-                }
-
-                string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = "UPDATE [Admin portal] SET [Agent Name] = @AgentName, Branch = @Branch, Password = @Password, [Number of Customer] = @CustomerCount WHERE [Agent ID] = @AgentID";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@AgentID", txtaid.Text);
-                        cmd.Parameters.AddWithValue("@AgentName", txtaname.Text);
-                        cmd.Parameters.AddWithValue("@Branch", txtbranch.Text);
-                        cmd.Parameters.AddWithValue("@Password", txtpass.Text);
-                        cmd.Parameters.AddWithValue("@CustomerCount", int.Parse(txtcus.Text));
-                        
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show("Record updated successfully!", "Success");
-                            reloadData();
-                            ClearFields();
-                        }
-                        else
-                        {
-                            MessageBox.Show("No record found with the specified Agent ID.", "Record Not Found");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error updating record: " + ex.Message, "Error");
-            }
-
+            
+            
             /*
             string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
 
@@ -144,115 +109,173 @@ namespace RSS.Properties
             MessageBox.Show("Update done");
             */
 
+        
+
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = GridViewAdmin2.Rows[e.RowIndex];
+
+                txtaid.Text = row.Cells["Agent ID"].Value.ToString();
+                txtaname.Text = row.Cells["Agent Name"].Value.ToString();
+                txtbranch.Text = row.Cells["Branch"].Value.ToString();
+                txtpass.Text = row.Cells["Password"].Value.ToString();
+                txtcus.Text = row.Cells["Number of Customer"].Value.ToString();
+            }
         }
 
-        private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            MessageBox.Show(e.RowIndex.ToString());
-        }
+        
 
         private void txtaid_TextChanged(object sender, EventArgs e)
         {
 
         }
 
-        private void ClearFields()
-        {
-            txtaid.Clear();
-            txtaname.Clear();
-            txtbranch.Clear();
-            txtpass.Clear();
-            txtcus.Clear();
-        }
-
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            // Delete button
-            try
-            {
-                if (string.IsNullOrWhiteSpace(txtaid.Text))
-                {
-                    MessageBox.Show("Please enter Agent ID to delete.", "Input Required");
-                    return;
-                }
 
-                var result = MessageBox.Show("Are you sure you want to delete this record?", 
-                    "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        }
+
+        private void btnInsert_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Security=True;TrustServerCertificate=True";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
                 
-                if (result == DialogResult.Yes)
+                string query = "INSERT INTO Admin2 (Agent_Id, Agent_Name, Branch, Password, No_of_Customer) " +
+                               "VALUES (@AgentId, @AgentName, @Branch, @Password, @NoOfCustomer)";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
-                    using (SqlConnection conn = new SqlConnection(connectionString))
+                    
+                    cmd.Parameters.AddWithValue("@AgentId", txtaid.Text.Trim());
+                    cmd.Parameters.AddWithValue("@AgentName", txtaname.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Branch", txtbranch.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Password", txtpass.Text.Trim());
+                    cmd.Parameters.AddWithValue("@NoOfCustomer", Convert.ToInt32(txtcus.Text));
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
                     {
-                        conn.Open();
-                        string query = "DELETE FROM [Admin portal] WHERE [Agent ID] = @AgentID";
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@AgentID", txtaid.Text);
-                            
-                            int rowsAffected = cmd.ExecuteNonQuery();
-                            if (rowsAffected > 0)
-                            {
-                                MessageBox.Show("Record deleted successfully!", "Success");
-                                reloadData();
-                                ClearFields();
-                            }
-                            else
-                            {
-                                MessageBox.Show("No record found with the specified Agent ID.", "Record Not Found");
-                            }
-                        }
+                        MessageBox.Show("Agent data inserted successfully!");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Insert failed.");
                     }
                 }
             }
-            catch (Exception ex)
+
+            ReloadData();
+
+        }
+
+        private void txtaname_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                MessageBox.Show("Error deleting record: " + ex.Message, "Error");
+                conn.Open();
+
+                
+                string query = "UPDATE Admin2 SET Agent_Name = @AgentName, Branch = @Branch, " +
+                               "Password = @Password, No_of_Customer = @NoOfCustomer WHERE Agent_ID = @AgentId";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add parameters with proper data types
+                    cmd.Parameters.AddWithValue("@AgentName", txtaname.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Branch", txtbranch.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Password", txtpass.Text.Trim());
+                    cmd.Parameters.AddWithValue("@NoOfCustomer", Convert.ToInt32(txtcus.Text));
+                    cmd.Parameters.AddWithValue("@AgentId", txtaid.Text.Trim());
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        MessageBox.Show("Agent data updated successfully!");
+                    }
+                    else
+                    {
+                        MessageBox.Show("No records updated. Please check if the Agent ID exists.");
+                    }
+                }
             }
+        }
+
+        private void GridViewAdmin2_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btnDelete_Click_1(object sender, EventArgs e)
+        {
+            string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Security=True;TrustServerCertificate=True";
+
+            SqlConnection conn = new SqlConnection(connectionString);
+
+            conn.Open();
+
+
+            string Agent_ID = txtaid.Text;
+
+            string query = "delete from Admin2 where Agent_ID = '" + Agent_ID + "' ";
+            SqlCommand cmd = new SqlCommand(query, conn);
+            cmd.ExecuteNonQuery();
+            MessageBox.Show("Delete done");
+        }
+
+        private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void txtaid_TextChanged_1(object sender, EventArgs e)
+        {
+
         }
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            // Search functionality
-            try
-            {
-                if (string.IsNullOrWhiteSpace(txtaid.Text))
-                {
-                    MessageBox.Show("Please enter Agent ID to search.", "Input Required");
-                    return;
-                }
+            string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
 
-                string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
-                using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                
+                string query = "SELECT * FROM Customer_Owner WHERE Name LIKE @SearchText";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    conn.Open();
-                    string query = "SELECT * FROM [Admin portal] WHERE [Agent ID] = @AgentID";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    
+                    cmd.Parameters.AddWithValue("@SearchText", "%" + txtsearch.Text.Trim() + "%");
+
+                    using (SqlDataAdapter adp = new SqlDataAdapter(cmd))
                     {
-                        cmd.Parameters.AddWithValue("@AgentID", txtaid.Text);
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                txtaname.Text = reader["Agent Name"]?.ToString() ?? "";
-                                txtbranch.Text = reader["Branch"]?.ToString() ?? "";
-                                txtpass.Text = reader["Password"]?.ToString() ?? "";
-                                txtcus.Text = reader["Number of Customer"]?.ToString() ?? "";
-                                MessageBox.Show("Record found!", "Success");
-                            }
-                            else
-                            {
-                                MessageBox.Show("No record found with the specified Agent ID.", "Record Not Found");
-                            }
-                        }
+                        DataTable dt = new DataTable();
+                        adp.Fill(dt);
+
+                        GridViewAdmin2.AutoGenerateColumns = true;
+                        GridViewAdmin2.DataSource = dt;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching record: " + ex.Message, "Error");
-            }
         }
+
+        
     }
 }
 

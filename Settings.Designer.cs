@@ -33,5 +33,16 @@ namespace RSS.Properties {
                 return ((string)(this["RSS_TMSConnectionString"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Securit" +
+            "y=True;TrustServerCertificate=True")]
+        public string RSS_TMSConnectionString1 {
+            get {
+                return ((string)(this["RSS_TMSConnectionString1"]));
+            }
+        }
     }
 }

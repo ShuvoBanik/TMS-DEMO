@@ -2,345 +2,459 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Data.SqlClient;
 
 namespace RSS.Properties
 {
     public partial class AgentPortal : Form
     {
+        private string connectionString = @"Data Source=DESKTOP-R6ES0QJ\SQLEXPRESS;Initial Catalog=RSS_TMS;Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
+
         public AgentPortal()
         {
             InitializeComponent();
+            InitializeForm();
         }
 
-        private void panel1_Paint(object sender, PaintEventArgs e)
+        private void InitializeForm()
         {
+            dateTimePicker1.Value = DateTime.Now.AddDays(7);
+            dateTimePicker2.Value = DateTime.Now.AddDays(14);
+            dateTimePicker4.Value = DateTime.Now.AddDays(7);
+            dateTimePicker3.Value = DateTime.Now.AddDays(10);
 
+            if (comboBox2.Items.Count > 0)
+                comboBox2.SelectedIndex = 0;
+
+            LoadBookings();
         }
 
-        private void label17_Click(object sender, EventArgs e)
+        private void BtnSaveBooking_Click(object sender, EventArgs e)
         {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
 
+                    string query = @"
+                    INSERT INTO Agent2 (
+                        [Flight], [From], [To], [Departure_Date], [Return_Date], [Traveller_Class],
+                        [Hotel], [Check_IN], [Check_Out], [Room_Guests], [Search_For],
+                        [Packages], [Departure_Point], [Destination], [Extra_Service],
+                        [Sub_Total], [Tax], [Total]
+                    ) VALUES (
+                        @Flight, @From, @To, @DepartureDate, @ReturnDate, @TravellerClass,
+                        @Hotel, @CheckIN, @CheckOut, @RoomGuests, @SearchFor,
+                        @Packages, @DeparturePoint, @Destination, @ExtraService,
+                        @SubTotal, @Tax, @Total
+                    )";
+
+                    SqlCommand cmd = new SqlCommand(query, conn);
+
+                    // Flight Section
+                    cmd.Parameters.AddWithValue("@Flight", GetSelectedFlightType());
+                    cmd.Parameters.AddWithValue("@From", txtFrom.Text.Trim());
+                    cmd.Parameters.AddWithValue("@To", txtTo.Text.Trim());
+                    cmd.Parameters.AddWithValue("@DepartureDate", dateTimePicker1.Value);
+                    cmd.Parameters.AddWithValue("@ReturnDate", GetSelectedFlightType() == "Round Way" ? dateTimePicker2.Value : (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@TravellerClass", GetSelectedTravellerClass());
+
+                    // Hotel Section
+                    cmd.Parameters.AddWithValue("@Hotel", txtHotel.Text.Trim());
+                    cmd.Parameters.AddWithValue("@CheckIN", dateTimePicker4.Value);
+                    cmd.Parameters.AddWithValue("@CheckOut", dateTimePicker3.Value);
+                    cmd.Parameters.AddWithValue("@RoomGuests", GetRoomGuestsValue());
+                    cmd.Parameters.AddWithValue("@SearchFor", GetSelectedSearchFor());
+
+                    // Packages Section
+                    cmd.Parameters.AddWithValue("@Packages", comboBox3.Text.Trim());
+                    cmd.Parameters.AddWithValue("@DeparturePoint", txtDeperture.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Destination", txtDestination.Text.Trim());
+                    cmd.Parameters.AddWithValue("@ExtraService", GetExtraServices());
+
+                    // Pricing
+                    decimal subTotal = CalculateSubTotal();
+                    decimal tax = subTotal * 0.10m;
+                    decimal total = subTotal + tax;
+
+                    cmd.Parameters.AddWithValue("@SubTotal", subTotal);
+                    cmd.Parameters.AddWithValue("@Tax", tax);
+                    cmd.Parameters.AddWithValue("@Total", total);
+
+                    int result = cmd.ExecuteNonQuery();
+                    if (result > 0)
+                    {
+                        MessageBox.Show("Booking saved successfully!");
+                        ClearForm();
+                        LoadBookings();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error saving booking: " + ex.Message);
+            }
         }
 
-        private void button4_Click(object sender, EventArgs e)
+        private decimal CalculateSubTotal()
+        {
+            decimal total = 0;
+
+            // Flight calculation
+            if (!string.IsNullOrWhiteSpace(txtFrom.Text) && !string.IsNullOrWhiteSpace(txtTo.Text))
+            {
+                total += GetFlightPrice();
+            }
+
+            // Hotel calculation
+            if (!string.IsNullOrWhiteSpace(txtHotel.Text))
+            {
+                total += GetHotelPrice();
+            }
+
+            // Package calculation
+            if (!string.IsNullOrWhiteSpace(comboBox3.Text))
+            {
+                total += GetPackagePrice();
+            }
+
+            return total;
+        }
+
+        private decimal GetFlightPrice()
+        {
+            decimal basePrice = 0;
+            string travellerClass = GetSelectedTravellerClass();
+
+            switch (travellerClass)
+            {
+                case "Economy": basePrice = 500.00m; break;
+                case "Business": basePrice = 1200.00m; break;
+                case "First Class": basePrice = 2500.00m; break;
+                default: basePrice = 500.00m; break;
+            }
+
+            if (GetSelectedFlightType() == "Round Way")
+                basePrice *= 1.8m; 
+
+            return basePrice;
+        }
+
+        private decimal GetHotelPrice()
+        {
+            int nights = (dateTimePicker3.Value - dateTimePicker4.Value).Days;
+            if (nights <= 0) nights = 1;
+
+            decimal basePrice = 0;
+            string searchFor = GetSelectedSearchFor();
+
+            switch (searchFor)
+            {
+                case "Business": basePrice = 200.00m; break;
+                case "Couple": basePrice = 300.00m; break;
+                case "Solo": basePrice = 150.00m; break;
+                case "Family": basePrice = 400.00m; break;
+                case "Friends": basePrice = 250.00m; break;
+                default: basePrice = 200.00m; break;
+            }
+
+            return basePrice * nights * GetRoomGuestsValue();
+        }
+
+        private decimal GetPackagePrice()
+        {
+            if (txtDestination.Text.ToLower().Contains("europe")) return 3000.00m;
+            if (txtDestination.Text.ToLower().Contains("asia")) return 2500.00m;
+            if (txtDestination.Text.ToLower().Contains("america")) return 2000.00m;
+            return 1500.00m;
+        }
+
+        private string GetSelectedFlightType()
+        {
+            if (radioButton1.Checked) return "One Way";
+            if (radioButton2.Checked) return "Round Way";
+            if (radioButton3.Checked) return "Multi Way";
+            return "One Way";
+        }
+
+        private string GetSelectedTravellerClass()
+        {
+            if (comboBox1.SelectedItem != null)
+                return comboBox1.SelectedItem.ToString();
+            return "Economy";
+        }
+
+        private string GetSelectedSearchFor()
+        {
+            if (checkBox1.Checked) return "Business";
+            if (checkBox2.Checked) return "Couple";
+            if (checkBox3.Checked) return "Solo";
+            if (checkBox4.Checked) return "Family";
+            if (checkBox5.Checked) return "Friends";
+            return "Business";
+        }
+
+        private int GetRoomGuestsValue()
+        {
+            if (comboBox2.SelectedItem != null && int.TryParse(comboBox2.SelectedItem.ToString(), out int guests))
+                return guests;
+            return 1;
+        }
+
+        private string GetExtraServices()
+        {
+            string services = "";
+            if (checkBox6.Checked) services += "Airport Tax, ";
+            if (checkBox7.Checked) services += "Travel Insurance, ";
+
+            return services.TrimEnd(',', ' ');
+        }
+
+        private void LoadBookings()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                    SELECT TOP 1000 
+                        [Flight], [From], [To], [Departure_Date], [Return_Date], [Traveller_Class],
+                        [Hotel], [Check_IN], [Check_Out], [Room_Guests], [Search_For],
+                        [Packages], [Departure_Point], [Destination], [Extra_Service],
+                        [Sub_Total], [Tax], [Total]
+                    FROM Agent2 
+                    ORDER BY [Departure_Date] DESC";
+
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading bookings: " + ex.Message);
+            }
+        }
+
+        private void ClearForm()
+        {
+            // Flight Section
+            txtFrom.Clear();
+            txtTo.Clear();
+            dateTimePicker1.Value = DateTime.Now.AddDays(7);
+            dateTimePicker2.Value = DateTime.Now.AddDays(14);
+            radioButton1.Checked = true;
+            if (comboBox1.Items.Count > 0)
+                comboBox1.SelectedIndex = 0;
+
+            // Hotel Section
+            txtHotel.Clear();
+            dateTimePicker4.Value = DateTime.Now.AddDays(7);
+            dateTimePicker3.Value = DateTime.Now.AddDays(10);
+            if (comboBox2.Items.Count > 0)
+                comboBox2.SelectedIndex = 0;
+
+            checkBox1.Checked = false;
+            checkBox2.Checked = false;
+            checkBox3.Checked = false;
+            checkBox4.Checked = false;
+            checkBox5.Checked = false;
+            checkBox1.Checked = true; 
+
+            comboBox3.Text = "";
+            txtDeperture.Clear();
+            txtDestination.Clear();
+            checkBox6.Checked = false;
+            checkBox7.Checked = false;
+
+            txtSubTotal.Text = "$0.00";
+            txtTax.Text = "$0.00";
+            txtTotal.Text = "$0.00";
+        }
+
+        private void CalculateTotal_Click(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void CalculateAndDisplayPrices()
+        {
+            decimal subTotal = CalculateSubTotal();
+            decimal tax = subTotal * 0.10m;
+            decimal total = subTotal + tax;
+
+            txtSubTotal.Text = subTotal.ToString("C2");
+            txtTax.Text = tax.ToString("C2");
+            txtTotal.Text = total.ToString("C2");
+        }
+
+        private void TxtFrom_TextChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void TxtTo_TextChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void TxtHotel_TextChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void ComboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void TxtDestination_TextChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+            dateTimePicker2.Enabled = radioButton2.Checked;
+        }
+
+        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+            dateTimePicker2.Enabled = radioButton2.Checked;
+        }
+
+        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+            dateTimePicker2.Enabled = false;
+        }
+
+        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox1.Checked)
+            {
+                checkBox2.Checked = false;
+                checkBox3.Checked = false;
+                checkBox4.Checked = false;
+                checkBox5.Checked = false;
+            }
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox2.Checked)
+            {
+                checkBox1.Checked = false;
+                checkBox3.Checked = false;
+                checkBox4.Checked = false;
+                checkBox5.Checked = false;
+            }
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox3_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox3.Checked)
+            {
+                checkBox1.Checked = false;
+                checkBox2.Checked = false;
+                checkBox4.Checked = false;
+                checkBox5.Checked = false;
+            }
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox4_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox4.Checked)
+            {
+                checkBox1.Checked = false;
+                checkBox2.Checked = false;
+                checkBox3.Checked = false;
+                checkBox5.Checked = false;
+            }
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox5_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox5.Checked)
+            {
+                checkBox1.Checked = false;
+                checkBox2.Checked = false;
+                checkBox3.Checked = false;
+                checkBox4.Checked = false;
+            }
+            CalculateAndDisplayPrices();
+        }
+
+        private void ComboBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void DateTimePicker3_ValueChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox6_CheckedChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void CheckBox7_CheckedChanged(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+        }
+
+        private void BtnClearForm_Click(object sender, EventArgs e)
+        {
+            ClearForm();
+        }
+
+        private void BtnRefresh_Click(object sender, EventArgs e)
+        {
+            LoadBookings();
+        }
+
+        private void BtnGenerateBill_Click(object sender, EventArgs e)
+        {
+            CalculateAndDisplayPrices();
+            MessageBox.Show("Bill generated successfully!\n\n" +
+                          $"Sub Total: {txtSubTotal.Text}\n" +
+                          $"Tax: {txtTax.Text}\n" +
+                          $"Total: {txtTotal.Text}",
+                          "Bill Summary");
+        }
+
+        
+
+        private void button4_Click_1(object sender, EventArgs e)
         {
             this.Hide();
             login login = new login();
             login.Show();
         }
-
-        private void txtFrom_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void AgentPortal_Load(object sender, EventArgs e)
-        {
-            LoadFlightData();
-            LoadHotelData();
-            LoadPackageData();
-        }
-
-        private void LoadFlightData()
-        {
-            try
-            {
-                string connectionString = "Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True";
-                using (SqlConnection con = new SqlConnection(connectionString))
-                {
-                    con.Open();
-                    string query = "SELECT * FROM Flights";
-                    SqlDataAdapter adapter = new SqlDataAdapter(query, con);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    // dgvFlights.DataSource = dt; // Assuming there's a DataGridView for flights
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading flight data: " + ex.Message, "Error");
-            }
-        }
-
-        private void LoadHotelData()
-        {
-            try
-            {
-                string connectionString = "Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True";
-                using (SqlConnection con = new SqlConnection(connectionString))
-                {
-                    con.Open();
-                    string query = "SELECT * FROM Hotels";
-                    SqlDataAdapter adapter = new SqlDataAdapter(query, con);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    // dgvHotels.DataSource = dt; // Assuming there's a DataGridView for hotels
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading hotel data: " + ex.Message, "Error");
-            }
-        }
-
-        private void LoadPackageData()
-        {
-            try
-            {
-                // Load packages into combo box
-                cmbPackages.Items.Clear();
-                cmbPackages.Items.AddRange(new string[] { 
-                    "Basic Package", 
-                    "Premium Package", 
-                    "Luxury Package", 
-                    "Family Package", 
-                    "Business Package" 
-                });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading package data: " + ex.Message, "Error");
-            }
-        }
-
-        private void btnSearchFlight_Click(object sender, EventArgs e)
-        {
-            SearchFlights();
-        }
-
-        private void SearchFlights()
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(txtFrom.Text) || string.IsNullOrWhiteSpace(txtTo.Text))
-                {
-                    MessageBox.Show("Please enter both departure and destination locations.", "Input Required");
-                    return;
-                }
-
-                string connectionString = "Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True";
-                using (SqlConnection con = new SqlConnection(connectionString))
-                {
-                    con.Open();
-                    string query = @"SELECT * FROM Flights 
-                                   WHERE DepartureCity LIKE @From 
-                                   AND ArrivalCity LIKE @To 
-                                   AND DepartureDate >= @DepartureDate";
-                    
-                    using (SqlCommand cmd = new SqlCommand(query, con))
-                    {
-                        cmd.Parameters.AddWithValue("@From", "%" + txtFrom.Text + "%");
-                        cmd.Parameters.AddWithValue("@To", "%" + txtTo.Text + "%");
-                        cmd.Parameters.AddWithValue("@DepartureDate", dtpDepartureDate.Value.Date);
-                        
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        
-                        // dgvFlights.DataSource = dt; // Display results
-                        
-                        if (dt.Rows.Count == 0)
-                        {
-                            MessageBox.Show("No flights found for the specified criteria.", "No Results");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching flights: " + ex.Message, "Error");
-            }
-        }
-
-        private void btnSearchHotel_Click(object sender, EventArgs e)
-        {
-            SearchHotels();
-        }
-
-        private void SearchHotels()
-        {
-            try
-            {
-                string connectionString = "Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True";
-                using (SqlConnection con = new SqlConnection(connectionString))
-                {
-                    con.Open();
-                    string query = @"SELECT * FROM Hotels 
-                                   WHERE City LIKE @City 
-                                   AND AvailableFrom <= @CheckIn 
-                                   AND AvailableTo >= @CheckOut";
-                    
-                    using (SqlCommand cmd = new SqlCommand(query, con))
-                    {
-                        cmd.Parameters.AddWithValue("@City", "%" + txtHotelCity.Text + "%");
-                        cmd.Parameters.AddWithValue("@CheckIn", dtpCheckIn.Value.Date);
-                        cmd.Parameters.AddWithValue("@CheckOut", dtpCheckOut.Value.Date);
-                        
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        
-                        // dgvHotels.DataSource = dt; // Display results
-                        
-                        if (dt.Rows.Count == 0)
-                        {
-                            MessageBox.Show("No hotels found for the specified criteria.", "No Results");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching hotels: " + ex.Message, "Error");
-            }
-        }
-
-        private void btnCalculateTotal_Click(object sender, EventArgs e)
-        {
-            CalculateBookingTotal();
-        }
-
-        private void CalculateBookingTotal()
-        {
-            try
-            {
-                decimal subtotal = 0;
-                decimal tax = 0;
-                decimal total = 0;
-
-                // Calculate based on selected services
-                if (decimal.TryParse(txtSubTotal.Text, out subtotal))
-                {
-                    // Add extra services
-                    if (chkAirportTax.Checked)
-                    {
-                        subtotal += 50; // Airport tax
-                    }
-                    if (chkInsurance.Checked)
-                    {
-                        subtotal += 25; // Travel insurance
-                    }
-
-                    tax = subtotal * 0.1m; // 10% tax
-                    total = subtotal + tax;
-
-                    txtTax.Text = tax.ToString("F2");
-                    txtTotal.Text = total.ToString("F2");
-                }
-                else
-                {
-                    MessageBox.Show("Please enter a valid subtotal amount.", "Invalid Input");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error calculating total: " + ex.Message, "Error");
-            }
-        }
-
-        private void btnGenerateBill_Click(object sender, EventArgs e)
-        {
-            GenerateCustomerBill();
-        }
-
-        private void GenerateCustomerBill()
-        {
-            try
-            {
-                if (ValidateBookingInfo())
-                {
-                    SaveCustomerBooking();
-                    MessageBox.Show("Customer booking saved successfully! Bill generated.", "Success");
-                    ClearBookingForm();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error generating bill: " + ex.Message, "Error");
-            }
-        }
-
-        private bool ValidateBookingInfo()
-        {
-            if (string.IsNullOrWhiteSpace(txtDeparturePoint.Text))
-            {
-                MessageBox.Show("Please enter departure point.", "Validation Error");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(txtDestination.Text))
-            {
-                MessageBox.Show("Please enter destination.", "Validation Error");
-                return false;
-            }
-            if (cmbAccommodation.SelectedIndex == -1)
-            {
-                MessageBox.Show("Please select accommodation.", "Validation Error");
-                return false;
-            }
-            return true;
-        }
-
-        private void SaveCustomerBooking()
-        {
-            string connectionString = "Data Source=DESKTOP-R6ES0QJ\\SQLEXPRESS;Initial Catalog=RSS-TMS;Integrated Security=True;TrustServerCertificate=True";
-            using (SqlConnection con = new SqlConnection(connectionString))
-            {
-                con.Open();
-                string query = @"INSERT INTO AgentBookings 
-                    (DeparturePoint, Destination, Accommodation, ExtraServices, 
-                     SubTotal, Tax, Total, BookingDate, AgentId) 
-                    VALUES 
-                    (@DeparturePoint, @Destination, @Accommodation, @ExtraServices, 
-                     @SubTotal, @Tax, @Total, @BookingDate, @AgentId)";
-
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@DeparturePoint", txtDeparturePoint.Text);
-                    cmd.Parameters.AddWithValue("@Destination", txtDestination.Text);
-                    cmd.Parameters.AddWithValue("@Accommodation", cmbAccommodation.Text);
-                    cmd.Parameters.AddWithValue("@ExtraServices", GetSelectedExtraServices());
-                    cmd.Parameters.AddWithValue("@SubTotal", decimal.Parse(txtSubTotal.Text));
-                    cmd.Parameters.AddWithValue("@Tax", decimal.Parse(txtTax.Text));
-                    cmd.Parameters.AddWithValue("@Total", decimal.Parse(txtTotal.Text));
-                    cmd.Parameters.AddWithValue("@BookingDate", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@AgentId", GetCurrentAgentId());
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-
-        private string GetSelectedExtraServices()
-        {
-            List<string> services = new List<string>();
-            if (chkAirportTax.Checked) services.Add("Airport Tax");
-            if (chkInsurance.Checked) services.Add("Travel Insurance");
-            return string.Join(", ", services);
-        }
-
-        private int GetCurrentAgentId()
-        {
-            // This should be set when the agent logs in
-            // For now, return a default value
-            return 1;
-        }
-
-        private void ClearBookingForm()
-        {
-            txtDeparturePoint.Clear();
-            txtDestination.Clear();
-            txtSubTotal.Clear();
-            txtTax.Clear();
-            txtTotal.Clear();
-            cmbAccommodation.SelectedIndex = -1;
-            chkAirportTax.Checked = false;
-            chkInsurance.Checked = false;
-        }
     }
+
+    
 }

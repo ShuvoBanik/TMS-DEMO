@@ -31,7 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(login));
             this.panel1 = new System.Windows.Forms.Panel();
             this.txtPassword = new System.Windows.Forms.TextBox();
-            this.txtUserName = new System.Windows.Forms.TextBox();
+            this.txtUsername = new System.Windows.Forms.TextBox();
             this.btnexit = new System.Windows.Forms.Button();
             this.btnback = new System.Windows.Forms.Button();
             this.btnclickhere = new System.Windows.Forms.Button();
@@ -39,8 +39,8 @@
             this.btnsignup = new System.Windows.Forms.Button();
             this.btnlogin = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
-            this.Password = new System.Windows.Forms.Label();
-            this.UserName = new System.Windows.Forms.Label();
+            this.password = new System.Windows.Forms.Label();
+            this.username = new System.Windows.Forms.Label();
             this.RSSTvl = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.panel1.SuspendLayout();
@@ -51,7 +51,7 @@
             this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
             this.panel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.panel1.Controls.Add(this.txtPassword);
-            this.panel1.Controls.Add(this.txtUserName);
+            this.panel1.Controls.Add(this.txtUsername);
             this.panel1.Controls.Add(this.btnexit);
             this.panel1.Controls.Add(this.btnback);
             this.panel1.Controls.Add(this.btnclickhere);
@@ -59,8 +59,8 @@
             this.panel1.Controls.Add(this.btnsignup);
             this.panel1.Controls.Add(this.btnlogin);
             this.panel1.Controls.Add(this.label4);
-            this.panel1.Controls.Add(this.Password);
-            this.panel1.Controls.Add(this.UserName);
+            this.panel1.Controls.Add(this.password);
+            this.panel1.Controls.Add(this.username);
             this.panel1.Controls.Add(this.RSSTvl);
             this.panel1.Location = new System.Drawing.Point(403, 1);
             this.panel1.Name = "panel1";
@@ -73,15 +73,15 @@
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(161, 20);
             this.txtPassword.TabIndex = 11;
-            this.txtPassword.Text = "admin123";
+            this.txtPassword.Text = "admin";
             // 
-            // txtUserName
+            // txtUsername
             // 
-            this.txtUserName.Location = new System.Drawing.Point(150, 132);
-            this.txtUserName.Name = "txtUserName";
-            this.txtUserName.Size = new System.Drawing.Size(161, 20);
-            this.txtUserName.TabIndex = 10;
-            this.txtUserName.Text = "admin";
+            this.txtUsername.Location = new System.Drawing.Point(150, 132);
+            this.txtUsername.Name = "txtUsername";
+            this.txtUsername.Size = new System.Drawing.Size(161, 20);
+            this.txtUsername.TabIndex = 10;
+            this.txtUsername.Text = "3333";
             // 
             // btnexit
             // 
@@ -151,30 +151,30 @@
             this.label4.TabIndex = 3;
             this.label4.Text = "Don\'t you have any account please sign up ?";
             // 
-            // Password
+            // password
             // 
-            this.Password.AutoSize = true;
-            this.Password.BackColor = System.Drawing.SystemColors.Control;
-            this.Password.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Password.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.Password.Location = new System.Drawing.Point(22, 183);
-            this.Password.Name = "Password";
-            this.Password.Size = new System.Drawing.Size(83, 16);
-            this.Password.TabIndex = 2;
-            this.Password.Text = "Password :";
-            this.Password.Click += new System.EventHandler(this.label3_Click);
+            this.password.AutoSize = true;
+            this.password.BackColor = System.Drawing.SystemColors.Control;
+            this.password.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.password.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.password.Location = new System.Drawing.Point(22, 183);
+            this.password.Name = "password";
+            this.password.Size = new System.Drawing.Size(83, 16);
+            this.password.TabIndex = 2;
+            this.password.Text = "Password :";
+            this.password.Click += new System.EventHandler(this.label3_Click);
             // 
-            // UserName
+            // username
             // 
-            this.UserName.AutoSize = true;
-            this.UserName.BackColor = System.Drawing.SystemColors.Control;
-            this.UserName.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.UserName.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.UserName.Location = new System.Drawing.Point(22, 136);
-            this.UserName.Name = "UserName";
-            this.UserName.Size = new System.Drawing.Size(114, 16);
-            this.UserName.TabIndex = 1;
-            this.UserName.Text = "UserName / ID :";
+            this.username.AutoSize = true;
+            this.username.BackColor = System.Drawing.SystemColors.Control;
+            this.username.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.username.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.username.Location = new System.Drawing.Point(22, 136);
+            this.username.Name = "username";
+            this.username.Size = new System.Drawing.Size(114, 16);
+            this.username.TabIndex = 1;
+            this.username.Text = "Username / ID :";
             // 
             // RSSTvl
             // 
@@ -214,8 +214,8 @@
         #endregion
 
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.Label Password;
-        private System.Windows.Forms.Label UserName;
+        private System.Windows.Forms.Label password;
+        private System.Windows.Forms.Label username;
         private System.Windows.Forms.Label RSSTvl;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Label label4;
@@ -226,6 +226,6 @@
         private System.Windows.Forms.Button btnlogin;
         private System.Windows.Forms.Button btnexit;
         private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.TextBox txtUserName;
+        private System.Windows.Forms.TextBox txtUsername;
     }
 }

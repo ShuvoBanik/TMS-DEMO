@@ -1,10 +1,11 @@
-﻿using System;
+﻿using RSS.Properties;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TMS
+namespace RSS
 {
     internal static class Program
     {
@@ -16,7 +17,8 @@ namespace TMS
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Login());
+            Form1 f1 = new Form1();
+            Application.Run(f1);
         }
     }
 }

@@ -143,7 +143,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(818, 468);
             this.panel1.TabIndex = 0;
-            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // txtTotal
             // 
@@ -189,7 +188,7 @@
             this.button4.TabIndex = 47;
             this.button4.Text = "LogOut ";
             this.button4.UseVisualStyleBackColor = false;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
+            this.button4.Click += new System.EventHandler(this.button4_Click_1);
             // 
             // button2
             // 
@@ -304,8 +303,7 @@
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(104, 13);
             this.label17.TabIndex = 34;
-            this.label17.Text = "Deperture Point :";
-            this.label17.Click += new System.EventHandler(this.label17_Click);
+            this.label17.Text = "Departure Point :";
             // 
             // label16
             // 
@@ -560,7 +558,6 @@
             this.txtFrom.Name = "txtFrom";
             this.txtFrom.Size = new System.Drawing.Size(100, 20);
             this.txtFrom.TabIndex = 8;
-            this.txtFrom.TextChanged += new System.EventHandler(this.txtFrom_TextChanged);
             // 
             // label5
             // 
